@@ -1,0 +1,183 @@
+Aggregate2-MongoDB
+
+Q1.
+
+ db.products.aggregate([
+...   { $match: { price: { $gte: 1000 } } }
+... ])
+{ "_id" : ObjectId("68da575ac4427e3ffbdc7248"), "name" : "Laptop Pro", "category" : "Electronics", "price" : 1200, "stock" : 50, "ratings" : [ { "user" : "U1", "score" : 5 }, { "user" : "U2", "score" : 4 } ], "supplier" : { "name" : "TechSupplier", "country" : "USA" }, "tags" : [ "premium", "lightweight" ], "createdAt" : ISODate("2024-08-15T10:00:00Z") }
+
+
+q2.
+
+ db.products.find({ price: { $gte: 1000 } }).pretty()
+{
+        "_id" : ObjectId("68da575ac4427e3ffbdc7248"),
+        "name" : "Laptop Pro",
+        "category" : "Electronics",
+        "price" : 1200,
+        "stock" : 50,
+        "ratings" : [
+                {
+                        "user" : "U1",
+                        "score" : 5
+                },
+                {
+                        "user" : "U2",
+                        "score" : 4
+                }
+        ],
+        "supplier" : {
+                "name" : "TechSupplier",
+                "country" : "USA"
+        },
+        "tags" : [
+                "premium",
+                "lightweight"
+        ],
+        "createdAt" : ISODate("2024-08-15T10:00:00Z")
+}
+
+
+q3.
+
+
+ db.products.aggregate([
+...   { $group: { _id: "$category", totalProducts: { $sum: 1 } } }
+... ])
+{ "_id" : "Furniture", "totalProducts" : 2 }
+{ "_id" : "Clothing", "totalProducts" : 2 }
+{ "_id" : "Home Appliances", "totalProducts" : 2 }
+{ "_id" : "Electronics", "totalProducts" : 4 }
+
+
+q4.
+
+ db.products.aggregate([
+...   {
+...     $group: {
+...       _id: "$category",
+...       maxPrice: { $max: "$price" },
+...       minPrice: { $min: "$price" }
+...     }
+...   }
+... ])
+{ "_id" : "Furniture", "maxPrice" : 700, "minPrice" : 300 }
+{ "_id" : "Clothing", "maxPrice" : 120, "minPrice" : 25 }
+{ "_id" : "Home Appliances", "maxPrice" : 900, "minPrice" : 120 }
+{ "_id" : "Electronics", "maxPrice" : 1200, "minPrice" : 150 }
+
+
+q5.
+
+ db.products.aggregate([
+...   { $project: { name: 1, price: 1, _id: 0 } },   
+...   { $sort: { price: -1 } },                      
+...   { $limit: 3 }                                  
+... ])
+{ "name" : "Laptop Pro", "price" : 1200 }
+{ "name" : "Refrigerator XL", "price" : 900 }
+{ "name" : "Smartphone X", "price" : 800 }
+
+q6.
+
+ db.products.aggregate([
+...   {
+...     $group: {
+...       _id: "$supplier.country",
+...       avgPrice: { $avg: "$price" }
+...     }
+...   }
+... ])
+{ "_id" : "USA", "avgPrice" : 1050 }
+{ "_id" : "China", "avgPrice" : 800 }
+{ "_id" : "Italy", "avgPrice" : 120 }
+{ "_id" : "Bangladesh", "avgPrice" : 25 }
+{ "_id" : "South Korea", "avgPrice" : 600 }
+{ "_id" : "Germany", "avgPrice" : 150 }
+{ "_id" : "India", "avgPrice" : 500 }
+{ "_id" : "Vietnam", "avgPrice" : 120 }
+
+q7.
+
+ db.products.aggregate([
+...   { $match: { stock: { $lte: 10 } } },
+...   { $count: "lowStockCount" }
+... ])
+{ "lowStockCount" : 1 }
+
+
+q8.
+
+ db.products.aggregate([
+...   {
+...     $group: {
+...       _id: "$category",
+...       totalStockValue: { $sum: { $multiply: ["$price", "$stock"] } }
+...     }
+...   }
+... ])
+{ "_id" : "Furniture", "totalStockValue" : 14500 }
+{ "_id" : "Clothing", "totalStockValue" : 30500 }
+{ "_id" : "Home Appliances", "totalStockValue" : 18300 }
+{ "_id" : "Electronics", "totalStockValue" : 218000 }
+
+
+q9.
+
+..
+> db.products.aggregate([
+...   { $group: { _id: "$category", count: { $sum: 1 } } },
+...   { $match: { count: { $gt: 5 } } }
+... ])
+>
+
+
+q10.
+
+ db.products.aggregate([
+...   {
+...     $group: {
+...       _id: "$category",
+...       totalRevenue: { $sum: { $multiply: ["$price", "$stock"] } }
+...     }
+...   },
+...   { $sort: { totalRevenue: -1 } },
+...   { $limit: 2 }
+... ])
+{ "_id" : "Electronics", "totalRevenue" : 218000 }
+{ "_id" : "Clothing", "totalRevenue" : 30500 }
+
+
+q11.
+
+
+
+ db.products.aggregate([
+...   {
+...     $addFields: {
+...       avgRating: { $avg: "$ratings.score" }
+...     }
+...   },
+...   {
+...     $sort: { category: 1, avgRating: -1 }
+...   },
+...   {
+...     $group: {
+...       _id: "$category",
+...       topProduct: { $first: "$$ROOT" }
+...     }
+...   },
+...   {
+...     $project: {
+...       _id: 0,
+...       category: "$_id",
+...       name: "$topProduct.name",
+...       avgRating: "$topProduct.avgRating"
+...     }
+...   }
+... ])
+{ "category" : "Furniture", "name" : "Dining Table Set", "avgRating" : 4.5 }
+{ "category" : "Clothing", "name" : "Running Shoes", "avgRating" : 4.5 }
+{ "category" : "Home Appliances", "name" : "Refrigerator XL", "avgRating" : 5 }
+{ "category" : "Electronics", "name" : "Laptop Pro", "avgRating" : 4.5 }
